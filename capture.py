@@ -5,14 +5,23 @@ import datetime
 import smtplib
 from email.message import EmailMessage
 import os
+import sys
 
 email_me = True
-email_conf = 0.75
+email_conf = 0.80
 
+# Local imports
+my_modules_path = os.getcwd()
+if sys.path[0] != my_modules_path:
+    sys.path.insert(0, my_modules_path)
+
+# The email_configuration file contains email information that will not be included in github files
 # === CONFIGURATION ===
-EMAIL_SENDER   = "x@gmail.com"
-EMAIL_PASSWORD = "x"   # Use an "App Password" if Gmail
-EMAIL_RECEIVER = "x@gmail.com"
+#EMAIL_SENDER   = "s@gmail.com"
+#EMAIL_PASSWORD = "x"   # Use an "App Password" if Gmail
+#EMAIL_RECEIVER = "r@gmail.com"
+
+from email_configuration import *
 
 # Function to send email with image
 def send_email(image_path, label):
@@ -35,6 +44,10 @@ def send_email(image_path, label):
     print(f"📧 Email sent with {image_path}")
 
 
+detection_items = ["person"] #, "car", "truck", "motorcycle"]):
+email_items	    = ["person"]
+
+print(f"Detected {email_items} will be E-mailed to {EMAIL_SENDER} from {EMAIL_RECEIVER}")
 print("loading model")
 # Load YOLOv8 model (pretrained on COCO dataset)
 model = YOLO("yolov8n.pt")  # 'n' = nano (fastest), can use yolov8s/m/l for better accuracy
@@ -43,6 +56,8 @@ print("open webcam, this will take a moment...")
 # Open webcam
 cap = cv2.VideoCapture(0)
 
+
+    
 print("Starting Detection")
 while True:
     ret, frame = cap.read()
@@ -59,24 +74,28 @@ while True:
             conf = float(box.conf[0])  # confidence
             label = model.names[cls_id]  # class label
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            if conf > 0.5:
-                print(f"{timestamp}: {label} Confidence: {conf}")
-                
-            # Only care about people and animals
-            if (conf > email_conf) and (label in ["person", "dog", "cat", "bird", "car", "truck"]):
-                # Get bounding box
+            if conf > 0.5 and conf < email_conf and label in detection_items:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, f"{label} {conf:.2f}", (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                print(f"{timestamp}: {label} Confidence: {conf}")
+                
+            # Only care about people and vehicles
+            if (conf >= email_conf) and (label in detection_items):
+                # Get bounding box
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, f"{label} {conf:.2f} {time_stamp}", (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
                 # Save frame wqhen detected
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"Captures\\{label}_{timestamp}.jpg"
+                filename = f"Captures\\{timestamp}_{label}.jpg"
                 cv2.imwrite(filename, frame)
                 print(f"Captured: {filename}")
                 
-                if label in ["person"]:
+                if label in email_items:
                     try:
                         send_email(filename, label)
                     except Exception as e:
