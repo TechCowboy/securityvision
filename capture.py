@@ -87,7 +87,7 @@ while True:
                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, f"{label} {conf:.2f} {time_stamp}", (x1, y1 - 10),
+                cv2.putText(frame, f"{label} {conf:.2f} {timestamp}", (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
                 # Save frame wqhen detected
