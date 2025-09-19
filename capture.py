@@ -6,6 +6,7 @@ import smtplib
 from email.message import EmailMessage
 import os
 import sys
+import time
 
 email_me = True
 email_conf = 0.80
@@ -56,6 +57,9 @@ print("open webcam, this will take a moment...")
 # Open webcam
 cap = cv2.VideoCapture(0)
 
+last_email_time = 0.0
+time_between_emails = 10
+
 
     
 print("Starting Detection")
@@ -96,10 +100,18 @@ while True:
                 print(f"Captured: {filename}")
                 
                 if label in email_items:
-                    try:
-                        send_email(filename, label)
-                    except Exception as e:
-                        print(f"{timestamp}: {str(e)}")
+                    current_time = time.time()
+                    elapsed_time = current_time - last_email_time
+                        
+                    if elapsed_time >= time_between_emails:
+                        last_email_time = time.time()
+                        try:
+                            if email_me:
+                                send_email(filename, label)
+                        except Exception as e:
+                            print(f"{timestamp}: {str(e)}")
+                    else:
+                        print("Not sending email")
 
     cv2.imshow("Detection", frame)
 
