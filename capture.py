@@ -1,3 +1,10 @@
+#	pip3 install opencv-python
+#	pip3 install ultralytics
+#	pip3 install EmailMessage
+#	pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+# lastest microsoft runtime library
+# https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-supported-redistributable-version
+
 import cv2
 from ultralytics import YOLO
 import datetime
@@ -9,7 +16,8 @@ import sys
 import time
 
 email_me = True
-email_conf = 0.80
+email_conf = 0.50
+image_save_conf = 0.50
 
 # Local imports
 my_modules_path = os.getcwd()
@@ -58,7 +66,7 @@ print("open webcam, this will take a moment...")
 cap = cv2.VideoCapture(0)
 
 last_email_time = 0.0
-time_between_emails = 10
+time_between_emails = 60
 
 
     
@@ -78,7 +86,7 @@ while True:
             conf = float(box.conf[0])  # confidence
             label = model.names[cls_id]  # class label
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            if conf > 0.5 and conf < email_conf and label in detection_items:
+            if conf > image_save_conf and conf < email_conf and label in detection_items:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, f"{label} {conf:.2f}", (x1, y1 - 10),
